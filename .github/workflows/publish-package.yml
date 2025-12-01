@@ -25,13 +25,13 @@ jobs:
 
       - name: Update package.json with correct scope
         run: |
-          node -e "
-          const fs = require('fs');
-          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          pkg.name = '@${process.env.GITHUB_REPOSITORY_OWNER}/${process.env.REPO_NAME}';
-          pkg.repository.url = 'git+https://github.com/${process.env.GITHUB_REPOSITORY}.git';
-          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
+          node -e '
+          const fs = require("fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          pkg.name = "@" + process.env.GITHUB_REPOSITORY_OWNER + "/" + process.env.REPO_NAME;
+          pkg.repository.url = "git+https://github.com/" + process.env.GITHUB_REPOSITORY + ".git";
+          fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+          '
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
