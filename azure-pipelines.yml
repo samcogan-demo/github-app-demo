@@ -20,8 +20,7 @@ steps:
     persistCredentials: false
 
   - script: |
-      echo "Installing GitHub App Token Generator"
-      npm install -g @octokit/auth-app
+      npm install @octokit/auth-app
     displayName: 'Install Dependencies'
 
   - script: |
