@@ -1,0 +1,23 @@
+{
+  "name": "@YOUR_ORG/github-app-demo",
+  "version": "1.0.0",
+  "description": "Demo application showcasing GitHub App authentication and package publishing",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_ORG/YOUR_REPO.git"
+  },
+  "keywords": [
+    "github-app",
+    "automation",
+    "packages"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

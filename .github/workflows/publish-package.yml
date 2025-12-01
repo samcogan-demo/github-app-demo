@@ -1,0 +1,65 @@
+name: Publish Package with GitHub App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Configure npm for GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ steps.app-token.outputs.token }}" > .npmrc
+          echo "@${GITHUB_REPOSITORY_OWNER}:registry=https://npm.pkg.github.com/" >> .npmrc
+        env:
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+
+      - name: Update package.json with correct scope
+        run: |
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.name = '@${process.env.GITHUB_REPOSITORY_OWNER}/${process.env.REPO_NAME}';
+          pkg.repository.url = 'https://github.com/${process.env.GITHUB_REPOSITORY}.git';
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Verify publication
+        run: |
+          echo "✅ Package published successfully!"
+          echo "📦 Package: @${{ github.repository_owner }}/${{ github.event.repository.name }}"
+          echo "🔐 Authenticated using GitHub App"
+          echo "📍 Registry: https://npm.pkg.github.com"
