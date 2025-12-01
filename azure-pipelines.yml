@@ -67,13 +67,7 @@ steps:
       INSTALLATION_ID: $(INSTALLATION_ID)
 
   - script: |
-      REPO_OWNER=$(echo "$(Build.Repository.Uri)" | sed -n 's/.*github\.com[:/]\([^/]*\)\/.*/\1/p')
-      REPO_NAME=$(echo "$(Build.Repository.Name)" | sed 's/.*\///')
-      
       echo "//npm.pkg.github.com/:_authToken=$(GITHUB_TOKEN)" > .npmrc
-      
-      echo "Repository Owner: $REPO_OWNER"
-      echo "Repository Name: $REPO_NAME"
     displayName: 'Configure npm for GitHub Packages'
     env:
       GITHUB_TOKEN: $(GITHUB_TOKEN)
@@ -85,12 +79,12 @@ steps:
       node -e "
       const fs = require('fs');
       const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-      pkg.name = process.env.REPO_NAME;
-      pkg.repository.url = '$(Build.Repository.Uri)';
-      pkg.publishConfig.registry = 'https://npm.pkg.github.com/' + process.env.REPO_OWNER;
+      pkg.name = '@' + process.env.REPO_OWNER + '/' + process.env.REPO_NAME;
+      pkg.repository.url = 'git+' + '$(Build.Repository.Uri)';
       fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-      console.log('Updated package.json with name: ' + pkg.name);
-      console.log('Registry: ' + pkg.publishConfig.registry);
+      console.log('Updated package.json:');
+      console.log('  Name: ' + pkg.name);
+      console.log('  Repo: ' + pkg.repository.url);
       "
     displayName: 'Update package.json'
     env:

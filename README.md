@@ -30,6 +30,7 @@ You'll need to create a GitHub App with the following:
 
 - **Repository Permissions:**
   - Contents: Read
+  - Metadata: Read (automatically granted)
   - Packages: Read & Write
 
 ### Installation
@@ -160,9 +161,9 @@ After successful publication:
 
 1. Go to your repository page
 2. Click on **Packages** (on the right sidebar)
-3. You'll see your published package with the repository name
+3. You'll see your published package: `@owner/repo-name`
 
-**Note:** The package is published using the repository URL (`https://npm.pkg.github.com/OWNER`) and is linked to the repository, not scoped with `@`.
+The package will be automatically linked to the repository.
 
 ## 🔐 Why GitHub Apps?
 
@@ -193,13 +194,13 @@ After successful publication:
 Install the package in another project:
 
 ```bash
-npm install github-app-demo --registry=https://npm.pkg.github.com/samcogan-demo
+npm install @samcogan-demo/github-app-demo --registry=https://npm.pkg.github.com
 ```
 
 Or configure in `.npmrc`:
 
 ```
-registry=https://npm.pkg.github.com/samcogan-demo
+@samcogan-demo:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
 ```
 

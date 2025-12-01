@@ -1,5 +1,5 @@
 {
-  "name": "github-app-demo",
+  "name": "@samcogan-demo/github-app-demo",
   "version": "1.0.0",
   "description": "Demo application showcasing GitHub App authentication and package publishing",
   "main": "index.js",
@@ -18,6 +18,6 @@
   "author": "Your Name",
   "license": "MIT",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/samcogan-demo"
+    "registry": "https://npm.pkg.github.com/"
   }
 }
