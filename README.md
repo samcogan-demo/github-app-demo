@@ -94,6 +94,13 @@ cat your-app-private-key.pem | base64 | tr -d '\n'
 
 Copy the base64 output and paste it as the `APP_PRIVATE_KEY` variable value.
 
+**Note on Private Key Format:**
+- GitHub Apps now generate keys in PKCS#8 format (`-----BEGIN PRIVATE KEY-----`)
+- If you have an older PKCS#1 format key (`-----BEGIN RSA PRIVATE KEY-----`), you may need to convert it:
+  ```bash
+  openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in old-key.pem -out new-key.pem
+  ```
+
 **Finding the Installation ID:**
 1. Go to your GitHub App settings
 2. Click **Install App** or **Advanced**

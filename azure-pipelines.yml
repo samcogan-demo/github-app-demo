@@ -37,6 +37,10 @@ steps:
             privateKey = Buffer.from(privateKey, 'base64').toString('utf-8');
           }
           
+          // Log key format for debugging (first line only, redacted)
+          const firstLine = privateKey.split('\n')[0];
+          console.log('Private key format:', firstLine);
+          
           const auth = createAppAuth({
             appId: process.env.APP_ID,
             privateKey: privateKey,
@@ -48,8 +52,10 @@ steps:
           });
           
           console.log('##vso[task.setvariable variable=GITHUB_TOKEN;issecret=true]' + token);
+          console.log('✅ Token generated successfully');
         } catch (error) {
           console.error('Error generating token:', error.message);
+          console.error('Full error:', error);
           process.exit(1);
         }
       })();
