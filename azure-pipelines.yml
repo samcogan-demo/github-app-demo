@@ -24,24 +24,36 @@ steps:
     displayName: 'Install Dependencies'
 
   - script: |
-      node -e "
+      node << 'SCRIPT'
       const { createAppAuth } = require('@octokit/auth-app');
-      const fs = require('fs');
       
       (async () => {
-        const auth = createAppAuth({
-          appId: process.env.APP_ID,
-          privateKey: process.env.APP_PRIVATE_KEY,
-        });
-        
-        const { token } = await auth({
-          type: 'installation',
-          installationId: process.env.INSTALLATION_ID,
-        });
-        
-        console.log('##vso[task.setvariable variable=GITHUB_TOKEN;issecret=true]' + token);
+        try {
+          // Decode base64 private key if needed, or use as-is
+          let privateKey = process.env.APP_PRIVATE_KEY;
+          
+          // Check if the key is base64 encoded (doesn't start with -----)
+          if (!privateKey.startsWith('-----')) {
+            privateKey = Buffer.from(privateKey, 'base64').toString('utf-8');
+          }
+          
+          const auth = createAppAuth({
+            appId: process.env.APP_ID,
+            privateKey: privateKey,
+          });
+          
+          const { token } = await auth({
+            type: 'installation',
+            installationId: process.env.INSTALLATION_ID,
+          });
+          
+          console.log('##vso[task.setvariable variable=GITHUB_TOKEN;issecret=true]' + token);
+        } catch (error) {
+          console.error('Error generating token:', error.message);
+          process.exit(1);
+        }
       })();
-      "
+      SCRIPT
     displayName: 'Generate GitHub App Token'
     env:
       APP_ID: $(APP_ID)
