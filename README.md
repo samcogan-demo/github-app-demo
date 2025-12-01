@@ -158,9 +158,11 @@ Push to the `main` branch (configured in `azure-pipelines.yml`)
 
 After successful publication:
 
-1. Go to your repository or organization page
+1. Go to your repository page
 2. Click on **Packages** (on the right sidebar)
-3. You'll see your published package: `@YOUR_ORG/YOUR_REPO`
+3. You'll see your published package with the repository name
+
+**Note:** The package is published using the repository URL (`https://npm.pkg.github.com/OWNER`) and is linked to the repository, not scoped with `@`.
 
 ## 🔐 Why GitHub Apps?
 
@@ -191,24 +193,14 @@ After successful publication:
 Install the package in another project:
 
 ```bash
-npm install @YOUR_ORG/YOUR_REPO --registry=https://npm.pkg.github.com
+npm install github-app-demo --registry=https://npm.pkg.github.com/samcogan-demo
 ```
 
-Or add to `package.json`:
-
-```json
-{
-  "dependencies": {
-    "@YOUR_ORG/YOUR_REPO": "^1.0.0"
-  }
-}
-```
-
-Make sure you have a `.npmrc` file with GitHub authentication:
+Or configure in `.npmrc`:
 
 ```
+registry=https://npm.pkg.github.com/samcogan-demo
 //npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
-@YOUR_ORG:registry=https://npm.pkg.github.com/
 ```
 
 ## 🔍 Workflow Breakdown

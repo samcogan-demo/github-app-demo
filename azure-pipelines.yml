@@ -71,7 +71,6 @@ steps:
       REPO_NAME=$(echo "$(Build.Repository.Name)" | sed 's/.*\///')
       
       echo "//npm.pkg.github.com/:_authToken=$(GITHUB_TOKEN)" > .npmrc
-      echo "@${REPO_OWNER}:registry=https://npm.pkg.github.com/" >> .npmrc
       
       echo "Repository Owner: $REPO_OWNER"
       echo "Repository Name: $REPO_NAME"
@@ -86,11 +85,12 @@ steps:
       node -e "
       const fs = require('fs');
       const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-      pkg.name = '@' + process.env.REPO_OWNER + '/' + process.env.REPO_NAME;
+      pkg.name = process.env.REPO_NAME;
       pkg.repository.url = '$(Build.Repository.Uri)';
-      pkg.publishConfig['@' + process.env.REPO_OWNER + ':registry'] = 'https://npm.pkg.github.com';
+      pkg.publishConfig.registry = 'https://npm.pkg.github.com/' + process.env.REPO_OWNER;
       fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
       console.log('Updated package.json with name: ' + pkg.name);
+      console.log('Registry: ' + pkg.publishConfig.registry);
       "
     displayName: 'Update package.json'
     env:

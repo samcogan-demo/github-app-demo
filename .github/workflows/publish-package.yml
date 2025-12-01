@@ -34,7 +34,7 @@ jobs:
       - name: Configure npm for GitHub Packages
         run: |
           echo "//npm.pkg.github.com/:_authToken=${{ steps.app-token.outputs.token }}" > .npmrc
-          echo "@${GITHUB_REPOSITORY_OWNER}:registry=https://npm.pkg.github.com/" >> .npmrc
+          cat .npmrc
         env:
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
 
@@ -43,9 +43,9 @@ jobs:
           node -e "
           const fs = require('fs');
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          pkg.name = '@${process.env.GITHUB_REPOSITORY_OWNER}/${process.env.REPO_NAME}';
+          pkg.name = '${process.env.REPO_NAME}';
           pkg.repository.url = 'https://github.com/${process.env.GITHUB_REPOSITORY}.git';
-          pkg.publishConfig['@${process.env.GITHUB_REPOSITORY_OWNER}:registry'] = 'https://npm.pkg.github.com';
+          pkg.publishConfig.registry = 'https://npm.pkg.github.com/${process.env.GITHUB_REPOSITORY_OWNER}';
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
         env:
