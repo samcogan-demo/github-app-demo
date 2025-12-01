@@ -1,4 +1,4 @@
-name: Publish Package with GitHub App
+name: Publish Package to GitHub Packages
 
 on:
   push:
@@ -23,18 +23,6 @@ jobs:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com'
 
-      - name: Generate GitHub App Token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-
-      - name: Configure npm for GitHub Packages
-        run: |
-          echo "//npm.pkg.github.com/:_authToken=${{ steps.app-token.outputs.token }}" > .npmrc
-
       - name: Update package.json with correct scope
         run: |
           node -e "
@@ -52,11 +40,11 @@ jobs:
       - name: Publish to GitHub Packages
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify publication
         run: |
           echo "✅ Package published successfully!"
           echo "📦 Package: @${{ github.repository_owner }}/${{ github.event.repository.name }}"
-          echo "🔐 Authenticated using GitHub App"
+          echo "🔐 Authenticated using GITHUB_TOKEN"
           echo "📍 Registry: https://npm.pkg.github.com"

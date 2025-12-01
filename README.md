@@ -1,12 +1,12 @@
-# GitHub App Demo - Automation Auth & Package Publishing
+# GitHub Packages Demo - Automated Package Publishing
 
-This demo showcases how to use **GitHub Apps for automation authentication** and **publishing packages to GitHub Packages**.
+This demo showcases **automated publishing of npm packages to GitHub Packages** using GitHub Actions.
 
 ## 🎯 What This Demonstrates
 
-1. **GitHub App Authentication**: Using a GitHub App instead of personal access tokens for automation
-2. **GitHub Packages**: Publishing npm packages to GitHub's package registry
-3. **GitHub Actions**: Automated workflow triggered on push to main branch
+1. **GitHub Packages**: Publishing npm packages to GitHub's package registry
+2. **GitHub Actions**: Automated workflow triggered on push to main branch
+3. **GITHUB_TOKEN**: Using the built-in token for secure authentication
 
 ## 🏗️ Architecture
 
@@ -15,118 +15,48 @@ This demo showcases how to use **GitHub Apps for automation authentication** and
 │  GitHub Action  │
 └────────┬────────┘
          │
-         ├─► Generate App Token (using App ID + Private Key)
+         ├─► Authenticate with GITHUB_TOKEN
          │
-         ├─► Configure npm with App Token
+         ├─► Configure npm for GitHub Packages
          │
          └─► Publish Package to GitHub Packages
 ```
 
 ## 📋 Prerequisites
 
-You'll need to create a GitHub App with the following:
-
-### GitHub App Permissions
-
-- **Repository Permissions:**
-  - Contents: Read
-  - Metadata: Read (automatically granted)
-  - Packages: Read & Write
-
-### Installation
-
-Install the GitHub App on your repository or organization.
+- A GitHub repository (organization or personal account)
+- GitHub Actions enabled (enabled by default)
+- Packages write permission for workflows (see setup below)
 
 ## 🔧 Setup Instructions
 
-### Step 1: Create a GitHub App
+### Step 1: Enable Workflow Permissions
 
-1. Go to your GitHub organization settings (or personal settings)
-2. Navigate to **Developer settings** → **GitHub Apps** → **New GitHub App**
-3. Fill in the details:
-   - **Name**: `Package Publisher Demo` (or your preferred name)
-   - **Homepage URL**: Your repository URL
-   - **Webhook**: Uncheck "Active" (not needed for this demo)
-4. Set permissions:
-   - Repository permissions → Contents: Read
-   - Repository permissions → Packages: Read and write
-5. Click **Create GitHub App**
-6. Note down the **App ID**
-7. Generate and download a **Private Key**
+1. Go to your repository **Settings** → **Actions** → **General**
+2. Scroll to **Workflow permissions**
+3. Ensure either:
+   - "Read and write permissions" is selected, OR
+   - "Read repository contents and packages permissions" is selected
+4. Save changes
 
-### Step 2: Install the GitHub App
+### Step 2: Run the Workflow
 
-1. After creating the app, go to **Install App**
-2. Install it on your account/organization
-3. Select the repository where this demo will run
+No secrets or configuration needed! The workflow uses the built-in `GITHUB_TOKEN` which automatically has the necessary permissions.
 
-### Step 3: Configure Repository Secrets
-
-#### For GitHub Actions
-
-Add the following secrets to your repository:
-
-1. Go to **Settings** → **Secrets and variables** → **Actions**
-2. Add these secrets:
-   - `APP_ID`: Your GitHub App's ID
-   - `APP_PRIVATE_KEY`: Contents of the private key file you downloaded (entire PEM content)
-
-#### For Azure DevOps
-
-Add the following variables to your pipeline:
-
-1. Go to **Pipelines** → Select your pipeline → **Edit** → **Variables**
-2. Add these secret variables:
-   - `APP_ID`: Your GitHub App's ID
-   - `APP_PRIVATE_KEY`: Base64-encoded contents of your private key file - mark as secret
-   - `INSTALLATION_ID`: Your GitHub App's installation ID
-
-**Encoding the APP_PRIVATE_KEY:**
-
-GitHub Apps may generate keys in PKCS#1 format (`-----BEGIN RSA PRIVATE KEY-----`), but Node.js crypto library works better with PKCS#8 format. Convert and encode your key:
-
-```bash
-# Step 1: Convert PKCS#1 to PKCS#8 (if needed)
-openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt \
-  -in your-app-private-key.pem -out converted-key.pem
-
-# Step 2: Base64 encode for Azure DevOps
-# On macOS/Linux:
-cat converted-key.pem | base64 | tr -d '\n'
-
-# On Windows (PowerShell):
-[Convert]::ToBase64String([System.IO.File]::ReadAllBytes("converted-key.pem"))
-```
-
-Copy the base64 output and paste it as the `APP_PRIVATE_KEY` variable value.
-
-**Quick check:** If your key starts with `-----BEGIN PRIVATE KEY-----` (not RSA), you can skip the conversion step.
-
-**Finding the Installation ID:**
-1. Go to your GitHub App settings
-2. Click **Install App** or **Advanced**
-3. The installation ID is in the URL: `https://github.com/settings/installations/{INSTALLATION_ID}`
-   Or use the GitHub API:
-   ```bash
-   curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-     https://api.github.com/app/installations
-   ```
-
-### Step 4: Update Configuration (if needed)
-
-The workflow automatically configures the package name and scope based on your repository. No manual updates needed!
+The workflow will automatically:
+- Configure the package name based on your repository
+- Set up npm authentication
+- Publish to GitHub Packages
 
 ## 🚀 Usage
 
-### GitHub Actions
-
-#### Manual Trigger
+### Manual Trigger
 
 1. Go to **Actions** tab in your repository
-2. Select **Publish Package with GitHub App** workflow
+2. Select **Publish Package to GitHub Packages** workflow
 3. Click **Run workflow**
 
-#### Automatic Trigger
+### Automatic Trigger
 
 Push to the `main` branch:
 
@@ -136,24 +66,7 @@ git commit -m "Update package"
 git push origin main
 ```
 
-### Azure DevOps Pipelines
-
-#### Setup
-
-1. Create a new pipeline in Azure DevOps
-2. Connect to your GitHub repository
-3. Select existing pipeline file: `azure-pipelines.yml`
-4. Add pipeline variables (see Azure DevOps Setup section below)
-
-#### Manual Trigger
-
-1. Go to **Pipelines** in Azure DevOps
-2. Select your pipeline
-3. Click **Run pipeline**
-
-#### Automatic Trigger
-
-Push to the `main` branch (configured in `azure-pipelines.yml`)
+The workflow will automatically publish your package to GitHub Packages.
 
 ## 📦 Viewing Published Packages
 
@@ -165,16 +78,16 @@ After successful publication:
 
 The package will be automatically linked to the repository.
 
-## 🔐 Why GitHub Apps?
+## 🔐 Why GITHUB_TOKEN?
 
-### Advantages over PATs (Personal Access Tokens):
+### Advantages of using GITHUB_TOKEN:
 
-✅ **Granular Permissions**: Only grant necessary permissions  
-✅ **Organization-wide**: Not tied to a single user account  
-✅ **Auditable**: Clear attribution in audit logs  
-✅ **Scalable**: Better rate limits  
-✅ **Secure**: Tokens are short-lived (default 1 hour)  
-✅ **No user dependency**: Workflow doesn't break if a user leaves
+✅ **Zero Configuration**: No secrets to manage  
+✅ **Automatic**: Built into every workflow run  
+✅ **Secure**: Scoped to the repository, expires after job completion  
+✅ **Permission Control**: Configurable per workflow  
+✅ **No user dependency**: Workflow doesn't break if a user leaves  
+✅ **Auditable**: All actions tracked in workflow logs
 
 ## 📚 Package Structure
 
@@ -182,7 +95,6 @@ The package will be automatically linked to the repository.
 ├── .github/
 │   └── workflows/
 │       └── publish-package.yml  # GitHub Action workflow
-├── azure-pipelines.yml          # Azure DevOps pipeline
 ├── .npmrc                       # npm registry configuration
 ├── index.js                     # Simple demo module
 ├── package.json                 # Package metadata
@@ -206,82 +118,47 @@ Or configure in `.npmrc`:
 
 ## 🔍 Workflow Breakdown
 
-### GitHub Actions Workflow
-
 The GitHub Action performs these steps:
 
 1. **Checkout**: Gets the repository code
-2. **Setup Node.js**: Configures Node.js environment
-3. **Generate App Token**: Uses `actions/create-github-app-token` to get a temporary token
-4. **Configure npm**: Sets up authentication for GitHub Packages
-5. **Update package.json**: Ensures correct scope and repository URL
-6. **Publish**: Publishes to GitHub Packages using the app token
-7. **Verify**: Confirms successful publication
+2. **Setup Node.js**: Configures Node.js environment with registry URL
+3. **Update package.json**: Ensures correct scope and repository URL
+4. **Publish**: Publishes to GitHub Packages using `GITHUB_TOKEN`
+5. **Verify**: Confirms successful publication
 
-### Azure DevOps Pipeline
-
-The Azure Pipeline performs these steps:
-
-1. **Install Node.js**: Sets up Node.js environment
-2. **Checkout**: Gets the repository code
-3. **Install Dependencies**: Installs `@octokit/auth-app` for token generation
-4. **Generate App Token**: Uses Octokit to create installation token from App credentials
-5. **Configure npm**: Sets up `.npmrc` with authentication
-6. **Update package.json**: Dynamically updates package name and repository URL
-7. **Publish**: Publishes to GitHub Packages
-8. **Verify**: Confirms successful publication
+The `GITHUB_TOKEN` is automatically provided by GitHub Actions and has the necessary permissions to publish packages.
 
 ## 🛠️ Troubleshooting
 
-### GitHub Actions
-
-#### Package already exists
+### Package already exists
 
 If you need to publish a new version, update the `version` field in `package.json`.
 
-#### Authentication failed
+### Permission denied when publishing
 
-- Verify `APP_ID` and `APP_PRIVATE_KEY` secrets are correctly set
-- Ensure the GitHub App is installed on the repository
-- Check that the app has correct permissions (Contents: Read, Packages: Write)
+1. Go to **Settings** → **Actions** → **General**
+2. Under **Workflow permissions**, ensure:
+   - "Read and write permissions" is selected
+   - "Allow GitHub Actions to create and approve pull requests" can be checked (optional)
+3. Save and re-run the workflow
 
-#### npm publish fails
+### Authentication failed
+
+- The `GITHUB_TOKEN` is automatically provided by GitHub Actions
+- Ensure your workflow has `permissions: packages: write` set
+- Check that Actions are enabled for your repository
+
+### npm publish fails
 
 - Ensure your package name matches the scope: `@YOUR_ORG/package-name`
-- Verify the repository has packages enabled
-
-### Azure DevOps
-
-#### Token generation fails
-
-- Verify all three variables are set: `APP_ID`, `APP_PRIVATE_KEY`, `INSTALLATION_ID`
-- Ensure `APP_PRIVATE_KEY` is base64 encoded (should be a long single-line string)
-- Make sure the variable is marked as "secret" in Azure DevOps
-- Verify the original PEM file includes headers (`-----BEGIN RSA PRIVATE KEY-----`)
-
-#### Installation ID not found
-
-- Navigate to your GitHub App → Install App
-- Check the URL or use the API to find the installation ID
-- Ensure the app is installed on the correct organization/repository
-
-#### Pipeline cannot access npm.pkg.github.com
-
-- Verify the generated token has packages:write permission
-- Check that the `.npmrc` file is correctly configured
-- Ensure the package name scope matches your GitHub organization
-
-#### Permission denied when publishing
-
-- Ensure the GitHub App has **Repository permissions** → **Packages** set to **Read and write**
-- Verify the app is installed on the repository (not just the organization)
-- Check that the package name matches the repository owner scope (`@owner/repo-name`)
+- Verify the `repository` field in `package.json` is correct
+- Check that the package doesn't already exist at that version
 
 ## 📖 Learn More
 
-- [GitHub Apps Documentation](https://docs.github.com/en/apps)
-- [GitHub Packages](https://docs.github.com/en/packages)
-- [actions/create-github-app-token](https://github.com/actions/create-github-app-token)
+- [GitHub Packages Documentation](https://docs.github.com/en/packages)
+- [Publishing npm packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)
+- [GITHUB_TOKEN permissions](https://docs.github.com/en/actions/security-guides/automatic-token-authentication)
 
 ## 📄 License
 
