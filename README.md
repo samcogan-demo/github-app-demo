@@ -31,10 +31,6 @@ You'll need to create a GitHub App with the following:
 - **Repository Permissions:**
   - Contents: Read
   - Packages: Read & Write
-- **Organization Permissions:**
-  - Packages: Read & Write (required for publishing to organization-level packages)
-
-**Important:** After updating permissions, you may need to accept the new permissions in your organization's GitHub App installation settings.
 
 ### Installation
 
@@ -53,7 +49,6 @@ Install the GitHub App on your repository or organization.
 4. Set permissions:
    - Repository permissions → Contents: Read
    - Repository permissions → Packages: Read and write
-   - Organization permissions → Packages: Read and write
 5. Click **Create GitHub App**
 6. Note down the **App ID**
 7. Generate and download a **Private Key**
@@ -283,16 +278,11 @@ If you need to publish a new version, update the `version` field in `package.jso
 - Check that the `.npmrc` file is correctly configured
 - Ensure the package name scope matches your GitHub organization
 
-#### Permission denied: installation not allowed to Create organization package
+#### Permission denied when publishing
 
-This means the GitHub App lacks organization-level package permissions:
-1. Go to your GitHub App settings
-2. Navigate to **Permissions** → **Organization permissions**
-3. Set **Packages** to **Read and write**
-4. Click **Save changes**
-5. Go to your organization's **Settings** → **GitHub Apps**
-6. Find your app and click **Review request** to approve the new permissions
-7. Re-run the pipeline
+- Ensure the GitHub App has **Repository permissions** → **Packages** set to **Read and write**
+- Verify the app is installed on the repository (not just the organization)
+- Check that the package name matches the repository owner scope (`@owner/repo-name`)
 
 ## 📖 Learn More
 

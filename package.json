@@ -18,6 +18,7 @@
   "author": "Your Name",
   "license": "MIT",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com",
+    "@samcogan-demo:registry": "https://npm.pkg.github.com"
   }
 }

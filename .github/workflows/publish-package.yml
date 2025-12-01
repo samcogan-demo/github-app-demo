@@ -45,6 +45,7 @@ jobs:
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
           pkg.name = '@${process.env.GITHUB_REPOSITORY_OWNER}/${process.env.REPO_NAME}';
           pkg.repository.url = 'https://github.com/${process.env.GITHUB_REPOSITORY}.git';
+          pkg.publishConfig['@${process.env.GITHUB_REPOSITORY_OWNER}:registry'] = 'https://npm.pkg.github.com';
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
         env:

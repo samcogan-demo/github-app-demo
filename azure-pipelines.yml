@@ -88,6 +88,7 @@ steps:
       const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
       pkg.name = '@' + process.env.REPO_OWNER + '/' + process.env.REPO_NAME;
       pkg.repository.url = '$(Build.Repository.Uri)';
+      pkg.publishConfig['@' + process.env.REPO_OWNER + ':registry'] = 'https://npm.pkg.github.com';
       fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
       console.log('Updated package.json with name: ' + pkg.name);
       "
