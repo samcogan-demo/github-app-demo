@@ -82,24 +82,24 @@ Add the following variables to your pipeline:
 
 **Encoding the APP_PRIVATE_KEY:**
 
-Azure DevOps variables can strip newlines, so base64 encode your private key:
+GitHub Apps may generate keys in PKCS#1 format (`-----BEGIN RSA PRIVATE KEY-----`), but Node.js crypto library works better with PKCS#8 format. Convert and encode your key:
 
 ```bash
+# Step 1: Convert PKCS#1 to PKCS#8 (if needed)
+openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt \
+  -in your-app-private-key.pem -out converted-key.pem
+
+# Step 2: Base64 encode for Azure DevOps
 # On macOS/Linux:
-cat your-app-private-key.pem | base64 | tr -d '\n'
+cat converted-key.pem | base64 | tr -d '\n'
 
 # On Windows (PowerShell):
-[Convert]::ToBase64String([System.IO.File]::ReadAllBytes("your-app-private-key.pem"))
+[Convert]::ToBase64String([System.IO.File]::ReadAllBytes("converted-key.pem"))
 ```
 
 Copy the base64 output and paste it as the `APP_PRIVATE_KEY` variable value.
 
-**Note on Private Key Format:**
-- GitHub Apps now generate keys in PKCS#8 format (`-----BEGIN PRIVATE KEY-----`)
-- If you have an older PKCS#1 format key (`-----BEGIN RSA PRIVATE KEY-----`), you may need to convert it:
-  ```bash
-  openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in old-key.pem -out new-key.pem
-  ```
+**Quick check:** If your key starts with `-----BEGIN PRIVATE KEY-----` (not RSA), you can skip the conversion step.
 
 **Finding the Installation ID:**
 1. Go to your GitHub App settings
