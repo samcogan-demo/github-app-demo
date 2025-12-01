@@ -77,8 +77,13 @@ Add the following variables to your pipeline:
 1. Go to **Pipelines** → Select your pipeline → **Edit** → **Variables**
 2. Add these secret variables:
    - `APP_ID`: Your GitHub App's ID
-   - `APP_PRIVATE_KEY`: Contents of the private key file (entire PEM content) - mark as secret
+   - `APP_PRIVATE_KEY`: Contents of the private key file (entire PEM content including `-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----`) - mark as secret
    - `INSTALLATION_ID`: Your GitHub App's installation ID
+
+**Important for APP_PRIVATE_KEY:**
+- Copy the entire PEM file contents exactly as-is (with actual newlines)
+- Azure DevOps will preserve the newlines when you paste into the secret variable field
+- Do NOT manually replace newlines with `\n` - paste the raw PEM content
 
 **Finding the Installation ID:**
 1. Go to your GitHub App settings
@@ -241,8 +246,9 @@ If you need to publish a new version, update the `version` field in `package.jso
 #### Token generation fails
 
 - Verify all three variables are set: `APP_ID`, `APP_PRIVATE_KEY`, `INSTALLATION_ID`
-- Ensure `APP_PRIVATE_KEY` includes the full PEM content with headers
-- Check that newlines in the private key are properly escaped (`\n`)
+- Ensure `APP_PRIVATE_KEY` includes the full PEM content with headers (`-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----`)
+- The private key should be pasted as-is with actual newlines, not escaped `\n` characters
+- Make sure the variable is marked as "secret" in Azure DevOps
 
 #### Installation ID not found
 
