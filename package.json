@@ -1,6 +1,6 @@
 {
   "name": "@samcogan-demo/github-app-demo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Demo: Using GitHub Apps for authentication in Azure DevOps pipelines to generate automated release notes",
   "main": "generate-release-notes.js",
   "bin": {
