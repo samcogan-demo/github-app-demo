@@ -23,6 +23,7 @@ pool:
 variables:
   - name: nodeVersion
     value: '20.x'
+  - group: ReleaseNotesApp
   # These should be configured as pipeline variables (secret):
   # - APP_ID: Your GitHub App ID
   # - APP_PRIVATE_KEY: Your GitHub App private key (base64 encoded)
