@@ -1,165 +1,303 @@
-# GitHub Packages Demo - Automated Package Publishing
+# GitHub App Authentication Demo for Azure DevOps
 
-This demo showcases **automated publishing of npm packages to GitHub Packages** using GitHub Actions.
+This repository demonstrates how to use **GitHub App authentication** in Azure DevOps pipelines to securely interact with GitHub APIs. The demo showcases an automated release notes generator that queries GitHub Issues and Pull Requests to create formatted release notes.
 
-## 🎯 What This Demonstrates
+## 🎯 Demo Scenario: Automated Release Notes Generator
 
-1. **GitHub Packages**: Publishing npm packages to GitHub's package registry
-2. **GitHub Actions**: Automated workflow triggered on push to main branch
-3. **GITHUB_TOKEN**: Using the built-in token for secure authentication
+This application demonstrates a real-world use case where an Azure DevOps pipeline:
+1. **Authenticates** to GitHub using a GitHub App (not a Personal Access Token)
+2. **Queries** GitHub Issues and Pull Requests
+3. **Generates** formatted release notes based on closed items
+4. **Creates or updates** a GitHub Release with the generated notes
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────┐
-│  GitHub Action  │
-└────────┬────────┘
-         │
-         ├─► Authenticate with GITHUB_TOKEN
-         │
-         ├─► Configure npm for GitHub Packages
-         │
-         └─► Publish Package to GitHub Packages
+┌──────────────────────┐
+│  Azure DevOps        │
+│  Pipeline            │
+└──────────┬───────────┘
+           │
+           ├─► Authenticate with GitHub App
+           │   (App ID + Private Key + Installation ID)
+           │
+           ├─► Generate Installation Token
+           │
+           ├─► Query GitHub API
+           │   • Fetch closed issues
+           │   • Fetch merged PRs
+           │
+           ├─► Generate Release Notes
+           │   • Group by type (features, bugs, etc.)
+           │   • Format markdown
+           │
+           └─► Create/Update GitHub Release
 ```
+
+## 🔐 Why GitHub Apps?
+
+GitHub Apps offer several advantages over Personal Access Tokens (PATs):
+
+| Feature | GitHub App | Personal Access Token |
+|---------|------------|----------------------|
+| **Scope** | Repository/Organization level | User account level |
+| **Permissions** | Fine-grained, specific permissions | Broad access |
+| **Expiration** | Tokens expire (1 hour), auto-renewable | Manual rotation required |
+| **User Independence** | Not tied to a specific user | Breaks if user leaves |
+| **Audit Trail** | Clear attribution to the app | Attributed to the user |
+| **Rate Limits** | Higher rate limits | Standard user limits |
 
 ## 📋 Prerequisites
 
-- A GitHub repository (organization or personal account)
-- GitHub Actions enabled (enabled by default)
-- Packages write permission for workflows (see setup below)
+### 1. GitHub App Setup
 
-## 🔧 Setup Instructions
+You need to create a GitHub App with the following permissions:
 
-### Step 1: Enable Workflow Permissions
+#### Required Permissions:
+- **Contents**: Read & Write (to create releases)
+- **Issues**: Read (to query issues)
+- **Pull Requests**: Read (to query PRs)
+- **Metadata**: Read (automatic)
 
-1. Go to your repository **Settings** → **Actions** → **General**
-2. Scroll to **Workflow permissions**
-3. Ensure either:
-   - "Read and write permissions" is selected, OR
-   - "Read repository contents and packages permissions" is selected
-4. Save changes
+#### Installation:
+The app must be installed on the organization or repository where you want to generate release notes.
 
-### Step 2: Run the Workflow
+### 2. Azure DevOps Setup
 
-No secrets or configuration needed! The workflow uses the built-in `GITHUB_TOKEN` which automatically has the necessary permissions.
+- An Azure DevOps organization and project
+- Pipeline configuration access
 
-The workflow will automatically:
-- Configure the package name based on your repository
-- Set up npm authentication
-- Publish to GitHub Packages
+## 🚀 Setup Instructions
 
-## 🚀 Usage
+### Step 1: Create a GitHub App
 
-### Manual Trigger
+1. Go to GitHub Settings → Developer settings → GitHub Apps → **New GitHub App**
+2. Fill in the details:
+   - **App Name**: `Azure DevOps Release Notes Generator` (or your choice)
+   - **Homepage URL**: Your Azure DevOps project URL
+   - **Webhook**: Uncheck "Active" (not needed for this demo)
+3. Set **Repository permissions**:
+   - Contents: Read & Write
+   - Issues: Read
+   - Pull requests: Read
+4. Click **Create GitHub App**
+5. Note down the **App ID**
+6. Generate and download a **private key** (you'll get a `.pem` file)
+7. Install the app:
+   - Go to the app settings → Install App
+   - Select your organization/account
+   - Choose "All repositories" or select specific repositories
+   - Note the **Installation ID** from the URL: `https://github.com/settings/installations/{INSTALLATION_ID}`
 
-1. Go to **Actions** tab in your repository
-2. Select **Publish Package to GitHub Packages** workflow
-3. Click **Run workflow**
+### Step 2: Configure Azure DevOps Pipeline Variables
 
-### Automatic Trigger
+1. In your Azure DevOps project, go to **Pipelines** → **Library** → **New variable group** (or use an existing one)
+2. Add the following variables:
 
-Push to the `main` branch:
+   | Variable Name | Value | Secret? |
+   |--------------|-------|---------|
+   | `APP_ID` | Your GitHub App ID | No |
+   | `INSTALLATION_ID` | Your installation ID | No |
+   | `APP_PRIVATE_KEY` | Base64-encoded private key | **Yes** |
+
+3. To encode your private key:
+   ```bash
+   # On macOS/Linux:
+   base64 -i path/to/your-app.pem | tr -d '\n'
+   
+   # On Windows (PowerShell):
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("path\to\your-app.pem"))
+   ```
+
+4. Link this variable group to your pipeline
+
+### Step 3: Create the Azure DevOps Pipeline
+
+1. In Azure DevOps, go to **Pipelines** → **New Pipeline**
+2. Choose **GitHub** as the source
+3. Select this repository: `samcogan-demo/github-app-demo`
+4. Azure DevOps will detect the `azure-pipelines.yml` file
+5. Review and save the pipeline
+
+### Step 4: Create Sample Issues and PRs
+
+To see the demo in action, create some sample issues and pull requests:
 
 ```bash
+# Clone the repository
+git clone https://github.com/samcogan-demo/github-app-demo.git
+cd github-app-demo
+
+# Create a feature branch
+git checkout -b feature/sample-feature
+
+# Make a change
+echo "console.log('New feature');" >> generate-release-notes.js
 git add .
-git commit -m "Update package"
-git push origin main
+git commit -m "Add sample feature"
+git push origin feature/sample-feature
 ```
 
-The workflow will automatically publish your package to GitHub Packages.
+Then:
+1. Create a Pull Request on GitHub
+2. Add labels like `feature`, `bug`, or `enhancement`
+3. Merge the PR
+4. Create some issues and close them
 
-## 📦 Viewing Published Packages
+### Step 5: Run the Pipeline
 
-After successful publication:
+You can trigger the pipeline in two ways:
 
-1. Go to your repository page
-2. Click on **Packages** (on the right sidebar)
-3. You'll see your published package: `@owner/repo-name`
-
-The package will be automatically linked to the repository.
-
-## 🔐 Why GITHUB_TOKEN?
-
-### Advantages of using GITHUB_TOKEN:
-
-✅ **Zero Configuration**: No secrets to manage  
-✅ **Automatic**: Built into every workflow run  
-✅ **Secure**: Scoped to the repository, expires after job completion  
-✅ **Permission Control**: Configurable per workflow  
-✅ **No user dependency**: Workflow doesn't break if a user leaves  
-✅ **Auditable**: All actions tracked in workflow logs
-
-## 📚 Package Structure
-
+#### Option A: Tag-based trigger (automatic)
+```bash
+git tag v1.0.0
+git push origin v1.0.0
 ```
-├── .github/
-│   └── workflows/
-│       └── publish-package.yml  # GitHub Action workflow
-├── .npmrc                       # npm registry configuration
-├── index.js                     # Simple demo module
-├── package.json                 # Package metadata
-└── README.md                    # This file
+
+#### Option B: Manual trigger
+1. Go to **Pipelines** in Azure DevOps
+2. Select your pipeline
+3. Click **Run pipeline**
+4. Enter parameters:
+   - **Tag Name**: `v1.0.0` (or your desired version)
+   - **Previous Tag**: (optional) `v0.9.0` for filtering changes
+5. Click **Run**
+
+## 📊 What the Pipeline Does
+
+The pipeline executes these steps:
+
+1. **Install Node.js**: Sets up the runtime environment
+2. **Checkout Repository**: Retrieves the code
+3. **Install Dependencies**: Installs `@octokit/auth-app` and `@octokit/rest`
+4. **Extract Repository Info**: Determines owner and repo name from the source
+5. **Determine Tag Name**: Uses either the Git tag or manual parameter
+6. **Generate Release Notes**: 
+   - Authenticates with the GitHub App
+   - Queries closed issues and merged PRs
+   - Groups items by type (features, bugs, other)
+   - Formats markdown
+   - Creates or updates the GitHub Release
+
+## 📝 Generated Release Notes Format
+
+The generated release notes follow this structure:
+
+```markdown
+# Release v1.0.0
+
+Released on 12/2/2025
+
+## Changes since v0.9.0
+
+### ✨ New Features
+
+- Add user authentication (#42)
+- Implement dark mode (#45)
+
+### 🐛 Bug Fixes
+
+- Fix login redirect issue (#38)
+- Resolve memory leak in cache (#41)
+
+### 🔀 Merged Pull Requests
+
+- Update dependencies (#43) by @username
+- Refactor API client (#44) by @username
+
+### 👥 Contributors
+
+Thank you to all contributors: @user1, @user2, @user3
 ```
 
 ## 🧪 Testing Locally
 
-Install the package in another project:
+You can test the release notes generator locally:
 
 ```bash
-npm install @samcogan-demo/github-app-demo --registry=https://npm.pkg.github.com
+# Install dependencies
+npm install
+
+# Set environment variables
+export APP_ID="your_app_id"
+export INSTALLATION_ID="your_installation_id"
+export APP_PRIVATE_KEY="your_base64_encoded_key"
+export GITHUB_OWNER="samcogan-demo"
+export GITHUB_REPO="github-app-demo"
+export TAG_NAME="v1.0.0"
+export PREVIOUS_TAG="v0.9.0"  # optional
+
+# Run the script
+node generate-release-notes.js
 ```
 
-Or configure in `.npmrc`:
+## 🔍 How It Works
 
-```
-@samcogan-demo:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
-```
+### Authentication Flow
 
-## 🔍 Workflow Breakdown
+1. The pipeline provides the GitHub App credentials (App ID, Private Key, Installation ID)
+2. The Node.js script uses `@octokit/auth-app` to generate a short-lived installation token
+3. This token is used to authenticate API requests via `@octokit/rest`
+4. The token expires after 1 hour (automatically handled by Octokit)
 
-The GitHub Action performs these steps:
+### API Queries
 
-1. **Checkout**: Gets the repository code
-2. **Setup Node.js**: Configures Node.js environment with registry URL
-3. **Update package.json**: Ensures correct scope and repository URL
-4. **Publish**: Publishes to GitHub Packages using `GITHUB_TOKEN`
-5. **Verify**: Confirms successful publication
+The script makes the following GitHub API calls:
 
-The `GITHUB_TOKEN` is automatically provided by GitHub Actions and has the necessary permissions to publish packages.
+- `GET /repos/{owner}/{repo}/issues` - Fetch closed issues
+- `GET /repos/{owner}/{repo}/pulls` - Fetch merged pull requests
+- `POST /repos/{owner}/{repo}/releases` - Create a release
+- `PATCH /repos/{owner}/{repo}/releases/{id}` - Update existing release
 
 ## 🛠️ Troubleshooting
 
-### Package already exists
+### "Authentication failed"
 
-If you need to publish a new version, update the `version` field in `package.json`.
+- Verify your `APP_ID`, `INSTALLATION_ID`, and `APP_PRIVATE_KEY` are correct
+- Ensure the private key is properly base64-encoded
+- Check that the GitHub App is installed on the repository
 
-### Permission denied when publishing
+### "Resource not accessible by integration"
 
-1. Go to **Settings** → **Actions** → **General**
-2. Under **Workflow permissions**, ensure:
-   - "Read and write permissions" is selected
-   - "Allow GitHub Actions to create and approve pull requests" can be checked (optional)
-3. Save and re-run the workflow
+- The GitHub App doesn't have the required permissions
+- Go to GitHub App settings and verify permissions:
+  - Contents: Read & Write
+  - Issues: Read
+  - Pull requests: Read
 
-### Authentication failed
+### "Release already exists"
 
-- The `GITHUB_TOKEN` is automatically provided by GitHub Actions
-- Ensure your workflow has `permissions: packages: write` set
-- Check that Actions are enabled for your repository
+- This is expected behavior - the script will update the existing release
+- If you want to create a new release, use a different tag name
 
-### npm publish fails
+### No issues or PRs found
 
-- Ensure your package name matches the scope: `@YOUR_ORG/package-name`
-- Verify the `repository` field in `package.json` is correct
-- Check that the package doesn't already exist at that version
+- Ensure you have closed issues or merged PRs in your repository
+- Check the date range if using `PREVIOUS_TAG`
+- Verify the repository name and owner are correct
 
-## 📖 Learn More
+## 📚 Additional Resources
 
-- [GitHub Packages Documentation](https://docs.github.com/en/packages)
-- [Publishing npm packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)
-- [GITHUB_TOKEN permissions](https://docs.github.com/en/actions/security-guides/automatic-token-authentication)
+- [GitHub Apps Documentation](https://docs.github.com/en/apps)
+- [GitHub REST API](https://docs.github.com/en/rest)
+- [Azure Pipelines Documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines/)
+- [Octokit Authentication](https://github.com/octokit/auth-app.js)
+
+## 🤝 Contributing
+
+This is a demo repository. Feel free to fork and adapt it for your own use cases!
 
 ## 📄 License
 
 MIT
+
+## 🎓 Learning Outcomes
+
+After working through this demo, you'll understand:
+
+- ✅ How to create and configure a GitHub App
+- ✅ How to authenticate to GitHub from Azure DevOps using a GitHub App
+- ✅ How to use the GitHub REST API with Octokit
+- ✅ How to securely store and use credentials in Azure DevOps
+- ✅ Best practices for CI/CD automation with GitHub and Azure DevOps
+- ✅ Why GitHub Apps are superior to PATs for automation scenarios
