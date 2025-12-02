@@ -51,23 +51,33 @@ async function generateReleaseNotes() {
       console.log('   Detected base64-encoded key, decoding...');
       console.log(`   Original length: ${originalKeyLength}`);
       try {
-        privateKey = Buffer.from(privateKey, 'base64').toString('utf-8');
-        console.log(`   Decoded length: ${privateKey.length}`);
-        console.log(`   Decoded first 60 chars: ${privateKey.substring(0, 60)}`);
+        // Decode from base64
+        const decoded = Buffer.from(privateKey, 'base64').toString('utf-8');
+        console.log(`   Decoded length: ${decoded.length}`);
+        
+        // Check if the decoded content looks valid
+        if (!decoded.includes('BEGIN') && !decoded.includes('PRIVATE KEY')) {
+          // The key might be corrupted or in the wrong format
+          // Try treating it as binary and reformatting
+          console.log('   ⚠️  Decoded content does not look like a valid PEM key');
+          console.log('   Attempting alternative decoding...');
+          
+          // Decode as binary and check if we need to reformat
+          const buffer = Buffer.from(privateKey, 'base64');
+          privateKey = buffer.toString('utf-8');
+        } else {
+          privateKey = decoded;
+        }
+        
+        console.log(`   Final decoded length: ${privateKey.length}`);
+        console.log(`   First line: ${privateKey.split('\n')[0]}`);
+        console.log(`   Last line: ${privateKey.split('\n').slice(-2, -1)[0]}`);
       } catch (decodeError) {
         console.error(`   ❌ Decode failed: ${decodeError.message}`);
         throw new Error(`Failed to decode base64 private key: ${decodeError.message}`);
       }
     } else {
       console.log('   Key appears to already be in PEM format');
-    }
-
-    // Validate the key format
-    if (!privateKey.includes('BEGIN') || !privateKey.includes('PRIVATE KEY')) {
-      console.error('   ❌ Key validation failed');
-      console.error(`   Contains BEGIN: ${privateKey.includes('BEGIN')}`);
-      console.error(`   Contains PRIVATE KEY: ${privateKey.includes('PRIVATE KEY')}`);
-      throw new Error('Invalid private key format. Key must be in PEM format and contain BEGIN PRIVATE KEY');
     }
 
     // Ensure proper line breaks (sometimes they get lost in base64 encoding/decoding)
@@ -78,11 +88,34 @@ async function generateReleaseNotes() {
     if (beforeReplace !== afterReplace) {
       console.log('   ⚠️  Replaced escaped newlines (\\n) with actual newlines');
     }
-    
+
+    // Validate the key format
+    if (!privateKey.includes('BEGIN') || !privateKey.includes('PRIVATE KEY')) {
+      console.error('   ❌ Key validation failed');
+      console.error(`   Contains BEGIN: ${privateKey.includes('BEGIN')}`);
+      console.error(`   Contains PRIVATE KEY: ${privateKey.includes('PRIVATE KEY')}`);
+      console.error(`   First 100 chars: ${privateKey.substring(0, 100)}`);
+      throw new Error('Invalid private key format. Key must be in PEM format and contain BEGIN PRIVATE KEY');
+    }
+
+    const lines = privateKey.split('\n');
     console.log(`   ✓ Private key format validated`);
     console.log(`   Key type: ${privateKey.includes('RSA') ? 'RSA' : 'PKCS8'}`);
     console.log(`   Key has proper line breaks: ${privateKey.includes('\n')}`);
-    console.log(`   Number of lines: ${privateKey.split('\n').length}`);
+    console.log(`   Number of lines: ${lines.length}`);
+    
+    // RSA keys should have 25-30 lines typically
+    if (lines.length < 10) {
+      console.error('   ⚠️  WARNING: Key has very few lines, this may indicate corruption');
+      console.error('   Lines in key:');
+      lines.forEach((line, idx) => {
+        if (idx < 5 || idx >= lines.length - 2) {
+          console.error(`     Line ${idx + 1}: ${line.substring(0, 60)}${line.length > 60 ? '...' : ''}`);
+        } else if (idx === 5) {
+          console.error(`     ... (${lines.length - 7} more lines) ...`);
+        }
+      });
+    }
     console.log('');
 
     // Authenticate using GitHub App
