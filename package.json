@@ -1,9 +1,13 @@
 {
   "name": "@samcogan-demo/github-app-demo",
   "version": "1.0.0",
-  "description": "Demo application showcasing GitHub App authentication and package publishing",
-  "main": "index.js",
+  "description": "Demo: Using GitHub Apps for authentication in Azure DevOps pipelines to generate automated release notes",
+  "main": "generate-release-notes.js",
+  "bin": {
+    "generate-release-notes": "./generate-release-notes.js"
+  },
   "scripts": {
+    "start": "node generate-release-notes.js",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "repository": {
@@ -13,11 +17,14 @@
   "keywords": [
     "github-app",
     "automation",
-    "packages"
+    "release-notes",
+    "azure-devops",
+    "ci-cd"
   ],
-  "author": "Your Name",
+  "author": "Sam Cogan",
   "license": "MIT",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
+  "dependencies": {
+    "@octokit/auth-app": "^7.1.3",
+    "@octokit/rest": "^21.0.2"
   }
 }
