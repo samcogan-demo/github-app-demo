@@ -27,13 +27,38 @@ async function generateReleaseNotes() {
     console.log(`📦 Repository: ${owner}/${repo}`);
     console.log(`🏷️  Tag: ${tagName}`);
 
-    // Decode base64 private key if needed
-    if (privateKey && !privateKey.startsWith('-----')) {
-      privateKey = Buffer.from(privateKey, 'base64').toString('utf-8');
+    // Validate required credentials
+    if (!appId || !installationId || !privateKey) {
+      throw new Error('Missing required credentials: APP_ID, INSTALLATION_ID, and APP_PRIVATE_KEY must be set');
     }
+
+    // Decode base64 private key if needed
+    console.log('🔑 Processing private key...');
+    if (!privateKey.includes('BEGIN')) {
+      console.log('   Detected base64-encoded key, decoding...');
+      try {
+        privateKey = Buffer.from(privateKey, 'base64').toString('utf-8');
+      } catch (decodeError) {
+        throw new Error(`Failed to decode base64 private key: ${decodeError.message}`);
+      }
+    }
+
+    // Validate the key format
+    if (!privateKey.includes('BEGIN') || !privateKey.includes('PRIVATE KEY')) {
+      throw new Error('Invalid private key format. Key must be in PEM format and contain BEGIN PRIVATE KEY');
+    }
+
+    // Ensure proper line breaks (sometimes they get lost in base64 encoding/decoding)
+    privateKey = privateKey.replace(/\\n/g, '\n');
+    
+    console.log(`   ✓ Private key format validated`);
+    console.log(`   Key type: ${privateKey.includes('RSA') ? 'RSA' : 'PKCS8'}`);
 
     // Authenticate using GitHub App
     console.log('🔐 Authenticating with GitHub App...');
+    console.log(`   App ID: ${appId}`);
+    console.log(`   Installation ID: ${installationId}`);
+    
     const octokit = new Octokit({
       authStrategy: createAppAuth,
       auth: {
