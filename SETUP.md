@@ -56,19 +56,42 @@ Approximately 15-20 minutes for complete setup.
 
    **On macOS/Linux**:
    ```bash
+   # Remove line breaks and encode
    base64 -i your-app-name.private-key.pem | tr -d '\n' > encoded-key.txt
+   
+   # Verify the output
    cat encoded-key.txt
    ```
 
    **On Windows (PowerShell)**:
    ```powershell
+   # Read the file and encode
    $bytes = [System.IO.File]::ReadAllBytes("your-app-name.private-key.pem")
    $encoded = [Convert]::ToBase64String($bytes)
-   $encoded | Out-File -FilePath encoded-key.txt
+   
+   # Save to file
+   $encoded | Out-File -FilePath encoded-key.txt -NoNewline
+   
+   # Display the output
    Get-Content encoded-key.txt
    ```
 
+   **Alternative: Use the PEM file directly (Advanced)**
+   
+   Instead of base64 encoding, you can use the raw PEM content:
+   ```bash
+   # On macOS/Linux - convert to single line with \n
+   awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' your-app-name.private-key.pem
+   ```
+   
+   However, **base64 encoding is recommended** as it's simpler and less error-prone.
+
 3. **Copy the encoded output** - you'll need it in the next step
+
+   ⚠️ **Important**: Make sure the base64 string:
+   - Has NO line breaks or spaces
+   - Is a single continuous string
+   - Starts with a letter/number (not whitespace)
 
 ### Part 3: Configure Azure DevOps (5 minutes)
 
@@ -91,6 +114,12 @@ Approximately 15-20 minutes for complete setup.
    | `APP_ID` | (Your App ID from Step 1.4) | No |
    | `INSTALLATION_ID` | (Your Installation ID from Step 1.5) | No |
    | `APP_PRIVATE_KEY` | (Your base64-encoded key from Step 2) | **Yes** ✓ |
+
+   ⚠️ **Critical**: When pasting `APP_PRIVATE_KEY`:
+   - Make sure it's the complete base64 string
+   - No extra spaces before or after
+   - Click the lock icon to mark it as secret
+   - Double-check the value was pasted correctly
 
 4. **Save the variable group**
 
@@ -186,6 +215,21 @@ Now that the demo is working, you can:
 
 ## ❓ Troubleshooting
 
+### Pipeline fails with "error:1E08010C:DECODER routines::unsupported"
+
+**Problem**: Private key format issue - the base64-encoded key wasn't decoded properly.
+
+**Solutions**:
+1. Re-encode the private key using the exact commands in Part 2
+2. Verify the base64 string has NO line breaks
+3. Make sure you marked `APP_PRIVATE_KEY` as secret in Azure DevOps
+4. Try this verification:
+   ```bash
+   # Decode and verify your base64 string
+   echo "YOUR_BASE64_STRING" | base64 -d
+   # Should output a valid PEM key starting with -----BEGIN
+   ```
+
 ### Pipeline fails with "Authentication failed"
 
 **Problem**: GitHub App credentials are incorrect or expired.
@@ -214,11 +258,21 @@ Now that the demo is working, you can:
 - Verify permissions: Contents (Read & Write), Issues (Read), Pull requests (Read)
 - Re-install the app if you changed permissions
 
+### "Missing required credentials"
+
+**Problem**: One or more environment variables are not set.
+
+**Solutions**:
+- Verify all three variables exist in the variable group: `APP_ID`, `INSTALLATION_ID`, `APP_PRIVATE_KEY`
+- Ensure the variable group is linked to the pipeline
+- Check that variable names match exactly (case-sensitive)
+
 ## 📞 Need Help?
 
 - Check the main [README.md](README.md) for detailed explanations
 - Review Azure DevOps pipeline logs for specific error messages
 - Verify each credential value is correct and properly formatted
+- The script now includes detailed debugging output to help identify issues
 
 ## 🎉 Success!
 
