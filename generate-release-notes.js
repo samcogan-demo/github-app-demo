@@ -26,6 +26,17 @@ async function generateReleaseNotes() {
     console.log('🚀 Starting Release Notes Generator');
     console.log(`📦 Repository: ${owner}/${repo}`);
     console.log(`🏷️  Tag: ${tagName}`);
+    console.log('');
+    console.log('🔍 Environment Variables Check:');
+    console.log(`   APP_ID is ${appId ? 'set' : 'NOT SET'}`);
+    console.log(`   INSTALLATION_ID is ${installationId ? 'set' : 'NOT SET'}`);
+    console.log(`   APP_PRIVATE_KEY is ${privateKey ? 'set' : 'NOT SET'}`);
+    if (privateKey) {
+      console.log(`   APP_PRIVATE_KEY length: ${privateKey.length} characters`);
+      console.log(`   APP_PRIVATE_KEY first 50 chars: ${privateKey.substring(0, 50)}...`);
+      console.log(`   APP_PRIVATE_KEY starts with BEGIN: ${privateKey.includes('BEGIN')}`);
+    }
+    console.log('');
 
     // Validate required credentials
     if (!appId || !installationId || !privateKey) {
@@ -34,25 +45,45 @@ async function generateReleaseNotes() {
 
     // Decode base64 private key if needed
     console.log('🔑 Processing private key...');
+    const originalKeyLength = privateKey.length;
+    
     if (!privateKey.includes('BEGIN')) {
       console.log('   Detected base64-encoded key, decoding...');
+      console.log(`   Original length: ${originalKeyLength}`);
       try {
         privateKey = Buffer.from(privateKey, 'base64').toString('utf-8');
+        console.log(`   Decoded length: ${privateKey.length}`);
+        console.log(`   Decoded first 60 chars: ${privateKey.substring(0, 60)}`);
       } catch (decodeError) {
+        console.error(`   ❌ Decode failed: ${decodeError.message}`);
         throw new Error(`Failed to decode base64 private key: ${decodeError.message}`);
       }
+    } else {
+      console.log('   Key appears to already be in PEM format');
     }
 
     // Validate the key format
     if (!privateKey.includes('BEGIN') || !privateKey.includes('PRIVATE KEY')) {
+      console.error('   ❌ Key validation failed');
+      console.error(`   Contains BEGIN: ${privateKey.includes('BEGIN')}`);
+      console.error(`   Contains PRIVATE KEY: ${privateKey.includes('PRIVATE KEY')}`);
       throw new Error('Invalid private key format. Key must be in PEM format and contain BEGIN PRIVATE KEY');
     }
 
     // Ensure proper line breaks (sometimes they get lost in base64 encoding/decoding)
+    const beforeReplace = privateKey.substring(0, 100);
     privateKey = privateKey.replace(/\\n/g, '\n');
+    const afterReplace = privateKey.substring(0, 100);
+    
+    if (beforeReplace !== afterReplace) {
+      console.log('   ⚠️  Replaced escaped newlines (\\n) with actual newlines');
+    }
     
     console.log(`   ✓ Private key format validated`);
     console.log(`   Key type: ${privateKey.includes('RSA') ? 'RSA' : 'PKCS8'}`);
+    console.log(`   Key has proper line breaks: ${privateKey.includes('\n')}`);
+    console.log(`   Number of lines: ${privateKey.split('\n').length}`);
+    console.log('');
 
     // Authenticate using GitHub App
     console.log('🔐 Authenticating with GitHub App...');
